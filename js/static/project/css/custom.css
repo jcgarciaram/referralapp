@@ -1,0 +1,163 @@
+body {
+    font-family: "Century Gothic", CenturyGothic, AppleGothic, sans-serif;
+}
+
+.navbar-default {
+    background-color: #cc0071;
+}
+
+.nav-tabs {
+    font-size: 20px;
+}
+
+.nav>li>a:hover, .nav>li>a:focus {
+    background-color: #d2e028;
+}
+
+.table-hover>tbody>tr:hover {
+    background-color: buttonface;
+}
+
+.btn-primary:focus {
+    background-color: #cc0071;
+    border-color: #cc0071;
+}
+
+.nav-tabs>li.active>a, .nav-tabs>li.active>a:hover, .nav-tabs>li.active>a:focus {
+    color: #ffffff;
+    background-color: #b0bc22;
+    border: 1px solid #b0bc22;
+}
+
+a {
+    color: #000000;
+}
+
+a:hover, a:focus {
+    color: #000000;
+}
+
+.panel-default {
+    border-color: #b0bc22;
+}
+
+.panel-default>.panel-heading {
+    background-color: #b0bc22;
+    border-color: #b0bc22;
+}
+
+.panel-heading {
+    border-top-right-radius: 0;
+    border-top-left-radius: 0;
+}
+
+.panel {
+    border-radius: 0 4px 4px 4px;
+}
+
+.input-group {
+    padding: 10px;
+}
+
+
+
+/*CAKE TABLE*/
+td#preparedCheckDiv
+{
+    text-align: center;
+}
+
+
+td#decoratedCheckDiv
+{
+    text-align: center;
+}
+
+.cake-col-1
+{
+    width: 3%;
+    
+}
+
+.cake-col-2
+{
+    width: 39.5%;
+}
+
+.cake-col-3
+{
+    width: 39.5%;
+}
+
+.cake-col-4
+{
+    text-align: center;
+    width: 9%;
+}
+
+
+.cake-col-5
+{
+    text-align: center;
+    width: 9%;
+}
+
+table#cakeTable
+{
+        margin-bottom: 0;
+}
+
+.column-left{ float: left; width: 33%; }
+.column-right{ float: right; width: 33%; }
+.column-center{ display: inline-block; width: 33%; }
+
+.pinkTitle {
+  color: #cc0071;
+  font-weight: bold;
+}
+
+.btn-primary {
+    color: #ffffff;
+    background-color: #cc0071;
+    border-color: #cc0071;
+ }
+ 
+.btn-primary:hover {
+    background-color: #fcb4b3;
+    border-color: #fcb4b3;
+}
+
+.modal-title {
+    text-align: left;
+    font-family: "Century Gothic", CenturyGothic, AppleGothic, sans-serif;
+}
+
+.modal-header {
+    background-color: #cc0071;
+    color: #ffffff;
+}
+
+.modal .close {
+    color: #ffffff;
+}
+
+button.close {
+    color: #ffffff;
+}
+
+.deleteCakeButton {
+    text-align: right;
+}
+.editCakeButton {
+    text-align: right;
+}
+
+.btn-group#cakePanelRadioButtonGroup {
+    text-align: center;
+    position: relative;
+    left: 40%;
+}
+
+.btn-group>btn.active>input>a, .nav-tabs>li.active>a:hover, .nav-tabs>li.active>a:focus {
+    color: #ffffff;
+}

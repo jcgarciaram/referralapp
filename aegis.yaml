@@ -1,0 +1,26 @@
+app:
+  name: Referral App
+  keepBuildFiles: true
+aws:
+  region: us-east-1
+lambda:
+  description: Referral App
+  functionName: referralapp
+  # A default execution role will be created for you, but you can always use a specific one.
+  # role: arn:aws:iam::695621932122:role/my_menchies_lambdas
+api:
+  name: Referral App API
+  description: Referral App API
+  # A "prod" stage will be created automatically. You can define stages here as well as stage variables.
+  # These stage variables are passed in the event message to your Lambda function.
+  # stages:
+  #   prod:
+  #     name: prod
+  #     variables:
+  #       MYSQL_SERVER: pipoapps-db.cx2vntgwwytv.us-east-1.rds.amazonaws.com
+  #       MYSQL_PORT: 3306
+  #       MYSQL_READ_USER: mymenchiesread
+  #       MYSQL_READ_PASS: Th1sIsaREADonlyUser00
+  #       MYSQL_USER: developerpipo
+  #       MYSQL_PASS: 1amP1p0th3B3$td091nTh3w0rld
+  #       MAX_WORKERS: 100

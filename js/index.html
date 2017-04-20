@@ -23,6 +23,7 @@
         
         <!-- JS -->
         <script src="static/project/css/app.js"></script>
+        <script src="static/project/css/auth.js"></script>
         <script src="static/project/css/vue.js"></script>
         <script src="node_modules/vue-resource/dist/vue-resource.js"></script>
         
@@ -44,9 +45,15 @@
           </div>
         </div><!-- /.container-fluid -->
       </nav>
-
+    
+      
+      
       <!-- main body of our application -->
       <div class="container" id="events">
+      
+        <div id="auth-div">
+            <loginpage v-on:login="loginUser" v-on:createaccount="createAccount" v-model="user"></loginpage>
+        </div>
 
         <!-- add an event form -->
         <div id="referral-code-table">

@@ -4,46 +4,127 @@ var api_route = "https://qs1l6iwb53.execute-api.us-east-1.amazonaws.com/prod/v1/
 // While no real authentication is done, hard-code store_id
 var store_id = "58ea6638c2bbb60014dfe7a9"
 
-// Load when index.html is first open
-window.onload = function () {
+function addLoadEvent(func) {
+    var oldonload = window.onload;
+    if (typeof window.onload != 'function') {
+        window.onload = func;
+    } else {
+        window.onload = function() {
+            if (oldonload) {
+                oldonload();
+            }
+            func();
+        }
+    }
+}
+
+addLoadEvent(function() {
 
     // While no cookie set up is yet implemented, allow all requests
     Vue.http.headers.common['Authorization'] = 'allow';
     
-    // Custom component for datepicker.
-    Vue.component('datepicker', {
+    Vue.component('loginpage', {
     template: '\
-        <div class="input-group date"><input class="form-control datetimepicker"\
-            ref="input"\
-            v-bind:value="value"\
-            data-date-format="LLL"\
-            data-date-end-date="0d"\
-            placeholder=""\
-            type="text"  />\
-            <span class="input-group-addon">\
-              <span class="glyphicon glyphicon-calendar"></span>\
-            </span></div>\
+        <div>\
+            <label for="userEmail">User Email</label>\
+            <input type="email" class="form-control" id="userEmail" placeholder="user@domain.com"  v-model="loginuser.user_email" v-on:input="updateLoginUser">\
+            <label for="userPassword">Password</label>\
+            <input type="password" class="form-control" id="userPassword" placeholder="" v-model="loginuser.password" v-on:input="updateLoginUser">\
+            <button type="button" class="btn btn-primary" data-dismiss="modal" v-on:click="login">Log In</button>\
+            <div>\
+              <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#postUser">\
+              create account\
+              </button>\
+            </div>\
+            <div class="modal fade" id="postUser" tabindex="-1" role="dialog" aria-labelledby="postUserLabel" aria-hidden="true">\
+              <div class="modal-dialog" role="document">\
+                <div class="modal-content">\
+                  <div class="modal-header">\
+                    <div class="column-left"> \
+                    </div>\
+                    <div class="column-center">\
+                      <h4 class="modal-title" id="postUserLabel">create account</h4>\
+                    </div>\
+                    <div id="modal-title-col" class="column-right">\
+                      <button type="button" class="close" data-dismiss="modal" aria-label="Close">\
+                      <span aria-hidden="true">&times;</span>\
+                      </button>\
+                    </div>\
+                  </div>\
+                  <div class="modal-body">\
+                    <form name="createAccountForm">\
+                      <div class="form-group">\
+                        <label for="createUserEmail">User Email</label>\
+                        <input type="email" class="form-control" id="createUserEmail" placeholder="user@domain.com"  v-model="createuser.user_email" v-on:input="updateCreateUser">\
+                      </div>\
+                      <div class="form-group">\
+                        <label for="createUserPass">Password</label>\
+                        <input type="password" class="form-control" id="createUserPass" placeholder=""  v-model="createuser.password" v-on:input="updateCreateUser">\
+                      </div>\
+                      <div class="form-group">\
+                        <label for="createUserFirstName">First name</label>\
+                        <input type="text" class="form-control" id="createUserFirstName" placeholder="Enter first name"  v-model="createuser.first_name" v-on:input="updateCreateUser">\
+                      </div>\
+                      <div class="form-group">\
+                        <label for="createUserMiddleName">Middle name</label>\
+                        <input type="text" class="form-control" id="createUserMiddleName" placeholder="Enter middle name"  v-model="createuser.middle_name" v-on:input="updateCreateUser">\
+                      </div>\
+                      <div class="form-group">\
+                        <label for="createUserLastName">Last name</label>\
+                        <input type="text" class="form-control" id="createUserLastName" placeholder="Enter last name"  v-model="createuser.last_name" v-on:input="updateCreateUser">\
+                      </div>\
+                      <div class="form-group">\
+                        <label for="createUserSecondLastName">Second last name</label>\
+                        <input type="text" class="form-control" id="createUserSecondLastName" placeholder="Enter second last name"  v-model="createuser.second_last_name" v-on:input="updateCreateUser">\
+                      </div>\
+                    </form>\
+                  </div>\
+                  <div class="modal-footer">\
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>\
+                    <button type="button" class="btn btn-primary" data-dismiss="modal" v-on:click="createaccount">Create account</button>\
+                  </div>\
+                </div>\
+              </div>\
+            </div>\
+        </div>\
     ',
     props: {
-        value: {
-            type: String,
-            default: moment().format('LLL')
+        loginuser: {
+            type: Object,
+            default: function () {
+                return { 
+                    user_email: '',
+                    password: ''
+                }
+            }
+        },
+        createuser: {
+            type: Object,
+            default: function () {
+                return { 
+                    user_email: '',
+                    password: '',
+                    first_name: '',
+                    middle_name: '',
+                    last_name: '',
+                    second_last_name: '',
+                }
+            }
         }
     },
-    mounted: function() {
-        let self = this;
-        this.$nextTick(function() {
-            $(this.$el).datetimepicker().on('dp.change', function(e) {
-                //this.value = moment(e.date).format('MMMM Do, YYYY h:mm a')
-                self.updateValue(moment(e.date).format('LLL'));
-            });
-        });
-    },
     methods: {
-        updateValue: function (value) {
-            
-            this.$emit('input', value);
+        createaccount: function () {
+            this.$emit('createaccount')
         },
+        login: function () {
+            this.$emit('login')
+        },
+        updateLoginUser: function () {
+          this.$emit('input', this.loginuser)
+        },
+        updateCreateUser: function () {
+          this.$emit('input', this.createuser)
+        }
     }
     });
     
@@ -75,6 +156,11 @@ window.onload = function () {
                     // If API returns with OK status, add the cake to the cakes array
                     if (response.status == 200) {
                         console.log("logged in!");
+                        console.log(response.body);
+                        
+                        window.localStorage.setItem('loggedIn', true);
+                        // window.location.href = 'index.html';
+                        
                     }
 
         
@@ -117,7 +203,7 @@ window.onload = function () {
         }
     });
 
-}
+})
 
 // insertCake inserts a new cake into the cakes array into a correct sorted position based on the pickup_timestamp
 function insertCake(element, array) {

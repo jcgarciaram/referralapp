@@ -64,9 +64,24 @@ window.onload = function () {
       
             // Use the vue-resource $http client to fetch data from the /cakes route
             this.$http.get(api_route + '/stores/' + store_id + '/referralcodes').then(function(response) {
+                console.log("Hey top response here: response.status is ", response.status);
+            
+                if (response.status == 403) {
+                    console.log("Hey top response here: 403 was returned");
+                    //window.location.href = 'authenticate.html';
+                }
+                
                 this.referralCodes = response.body ? response.body : [];
                 this.lenReferralCodes = this.referralCodes.length;
-            })
+            }, (response) => {
+                console.log("Hey bottom response here: response.status is ", response.status);
+                    
+                if (response.status == 403) {
+                    console.log("Hey bottom response here: 403 was returned");
+                    // window.location.href = 'authenticate.html';
+                }
+        
+            });
 
         },
       
@@ -97,7 +112,11 @@ window.onload = function () {
                 
                 // Post the new cake to the /cakes route using the $http client
                 this.$http.post(api_route + '/stores/' + store_id + '/referralcodes', this.newReferralCode).then((response) => {
-        
+                    
+                    if (response.status == 403) {
+                        window.location.href = 'authenticate.html';
+                    }
+                    
                     // If API returns with OK status, add the cake to the cakes array
                     if (response.status == 200) {
                         console.log("referralcode has been added!");
@@ -130,6 +149,10 @@ window.onload = function () {
                 // Make API request
                 this.$http.put(api_route + '/stores/' + store_id + '/referralcodes/' + referralCodeId).then((response) => {
                     
+                    if (response.status == 403) {
+                        window.location.href = 'authenticate.html';
+                    }
+                    
                     if (response.status == 200) {
                         console.log("referral code has been used!");
                     }
@@ -142,6 +165,16 @@ window.onload = function () {
                 })
             
             },
+            
+            isLoggedIn: function()  {
+                
+                if (window.localStorage.getItem('loggedIn')) {
+                    return true;
+                } else {
+                    return false;
+                }
+                    
+            }
 
         }
     });

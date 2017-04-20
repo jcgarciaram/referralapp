@@ -11,6 +11,7 @@ import (
     // "github.com/guregu/dynamo"
     
     "encoding/json"
+    "net/http"
     "net/url"
     "strconv"
     // "time"
@@ -27,7 +28,7 @@ func PostUser(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyResponse,
     var bodyByte []byte
     if tBody, err := apiutils.GetBodyFromEvent(evt); err != nil {
         res.Headers["Content-Type"] = "charset=UTF-8"
-        res.StatusCode = StatusInternalServerError
+        res.StatusCode = strconv.Itoa(http.StatusInternalServerError)
         res.Body = err.Error()
         return
     } else {
@@ -48,7 +49,7 @@ func PostUser(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyResponse,
         }).Warn("Error marshaling JSON to userConfig struct")   
         
         res.Headers["Content-Type"] = "charset=UTF-8"
-        res.StatusCode = StatusUnprocessableEntity
+        res.StatusCode = strconv.Itoa(http.StatusUnprocessableEntity)
         res.Body = "Error marshaling JSON to userConfig struct"
         return
     }
@@ -61,7 +62,7 @@ func PostUser(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyResponse,
         }).Warn("Error hashing password")   
         
         res.Headers["Content-Type"] = "charset=UTF-8"
-        res.StatusCode = StatusInternalServerError
+        res.StatusCode = strconv.Itoa(http.StatusInternalServerError)
         res.Body = fmt.Sprintf("Error hashing password")
         return
     }
@@ -115,7 +116,7 @@ func PostUser(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyResponse,
         return
     }
     res.Body = strconv.Itoa(lastInsertId)
-    res.StatusCode = StatusOK
+    res.StatusCode = strconv.Itoa(http.StatusOK)
 
 }
 
@@ -143,7 +144,7 @@ func GetUser(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyResponse, 
     // If no users are found, return StatusNoContent
     if len(rowMapSlice) == 0 {
         res.Headers["Content-Type"] = "charset=UTF-8"
-        res.StatusCode = StatusNoContent
+        res.StatusCode = strconv.Itoa(http.StatusNoContent)
         res.Body = ""
         return
     }
@@ -165,7 +166,7 @@ func LogInUser(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyResponse
     var bodyByte []byte
     if tBody, err := apiutils.GetBodyFromEvent(evt); err != nil {
         res.Headers["Content-Type"] = "charset=UTF-8"
-        res.StatusCode = StatusInternalServerError
+        res.StatusCode = strconv.Itoa(http.StatusInternalServerError)
         res.Body = err.Error()
         return
     } else {
@@ -186,7 +187,7 @@ func LogInUser(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyResponse
         }).Warn("Error marshaling JSON to userConfig struct")   
         
         res.Headers["Content-Type"] = "charset=UTF-8"
-        res.StatusCode = StatusUnprocessableEntity
+        res.StatusCode = strconv.Itoa(http.StatusUnprocessableEntity)
         res.Body = "Error marshaling JSON to userConfig struct"
         return
     }
@@ -209,7 +210,7 @@ func LogInUser(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyResponse
     if len(rowMapSlice) == 0 {
         
         res.Headers["Content-Type"] = "charset=UTF-8"
-        res.StatusCode = StatusNoContent
+        res.StatusCode = strconv.Itoa(http.StatusNoContent)
         res.Body = "No content"
         return
     }
@@ -220,7 +221,7 @@ func LogInUser(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyResponse
     if err := bcrypt.CompareHashAndPassword([]byte(storedPassword), []byte(u.Password)); err != nil {
     
         res.Headers["Content-Type"] = "charset=UTF-8"
-        res.StatusCode = StatusNoContent
+        res.StatusCode = strconv.Itoa(http.StatusNoContent)
         res.Body = "Invalid username/password"
         return
     }
@@ -228,13 +229,13 @@ func LogInUser(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyResponse
     token, err := apiutils.GenerateJWT(u.UserEmail)
     if err != nil {
         res.Headers["Content-Type"] = "charset=UTF-8"
-        res.StatusCode = StatusInternalServerError
+        res.StatusCode = strconv.Itoa(http.StatusInternalServerError)
         res.Body = "Error generating JSON Web Token"
         return
     }
     
-    res.Headers["Set-Cookie"] = "access-token=" + token
-    res.StatusCode = StatusOK
+    res.Headers["Set-Cookie"] = apiutils.GenerateCookieToken(token)
+    res.StatusCode = strconv.Itoa(http.StatusOK)
     
 }
 

@@ -7,6 +7,7 @@ import (
     "gopkg.in/mgo.v2/bson"
     
     "encoding/json"
+    "net/http"
     "strings"
     "strconv"
     "net/url"
@@ -42,7 +43,7 @@ func GetReferralCode(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyRe
     // If no cakes are found, return StatusNoContent
     if len(rowMapSlice) == 0 {
         res.Headers["Content-Type"] = "charset=UTF-8"
-        res.StatusCode = StatusNoContent
+        res.StatusCode = strconv.Itoa(http.StatusNoContent)
         res.Body = ""
         return
     }
@@ -80,7 +81,7 @@ func GetReferralCodes(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyR
     // If no cakes are found, return StatusNoContent
     if len(rowMapSlice) == 0 {
         res.Headers["Content-Type"] = "charset=UTF-8"
-        res.StatusCode = StatusNoContent
+        res.StatusCode = strconv.Itoa(http.StatusNoContent)
         res.Body = ""
         return
     }
@@ -104,7 +105,7 @@ func PostReferralCode(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyR
     var bodyByte []byte
     if tBody, err := apiutils.GetBodyFromEvent(evt); err != nil {
         res.Headers["Content-Type"] = "charset=UTF-8"
-        res.StatusCode = StatusInternalServerError
+        res.StatusCode = strconv.Itoa(http.StatusInternalServerError)
         res.Body = err.Error()
         return
     } else {
@@ -123,7 +124,7 @@ func PostReferralCode(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyR
         }).Warn("Error marshaling JSON to ReferralCode struct")   
         
         res.Headers["Content-Type"] = "charset=UTF-8"
-        res.StatusCode = StatusUnprocessableEntity
+        res.StatusCode = strconv.Itoa(http.StatusUnprocessableEntity)
         res.Body = "Error marshaling JSON to ReferralCode struct"
         return
     }
@@ -183,7 +184,7 @@ func PostReferralCode(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyR
     qrCode, err := rc.generateQRCode()
     if err != nil {
         res.Headers["Content-Type"] = "charset=UTF-8"
-        res.StatusCode = StatusInternalServerError
+        res.StatusCode = strconv.Itoa(http.StatusInternalServerError)
         res.Body = err.Error()
         return
     }
@@ -193,7 +194,7 @@ func PostReferralCode(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyR
     key := storeId + "/" + rc.ReferralCodeId + ".png"
     if err := apiutils.SaveToS3(bucket, key, qrCode); err != nil {
         res.Headers["Content-Type"] = "charset=UTF-8"
-        res.StatusCode = StatusInternalServerError
+        res.StatusCode = strconv.Itoa(http.StatusInternalServerError)
         res.Body = err.Error()
         return
     }
@@ -201,20 +202,44 @@ func PostReferralCode(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyR
     url, err := apiutils.GetDownloadURL(bucket, key)
     if err != nil {
         res.Headers["Content-Type"] = "charset=UTF-8"
-        res.StatusCode = StatusInternalServerError
+        res.StatusCode = strconv.Itoa(http.StatusInternalServerError)
         res.Body = err.Error()
         return
     }
     
+    /*
     messageBody := "Forward this code to your friends and get rewarded when it's used!"
     if err := apiutils.SendMMSMessage(rc.GeneratedPhone, messageBody, url); err != nil {
         res.Headers["Content-Type"] = "charset=UTF-8"
-        res.StatusCode = StatusInternalServerError
+        res.StatusCode = strconv.Itoa(http.StatusInternalServerError)
         res.Body = err.Error()
         return
     }
+    */
+    
+    var messageBody string
+    
+    if shortUrl, err := apiutils.ShortenURL(url); err != nil {
+        res.Headers["Content-Type"] = "charset=UTF-8"
+        res.StatusCode = strconv.Itoa(http.StatusInternalServerError)
+        res.Body = err.Error()
+        return
+    } else {
+    
+        messageBody = "Forward this code to your friends and get rewarded when it's used: " + shortUrl
+    
+    }
+    
+    
+    if err = apiutils.SendSMSMessage(rc.GeneratedPhone, messageBody); err != nil {
+        res.Headers["Content-Type"] = "charset=UTF-8"
+        res.StatusCode = strconv.Itoa(http.StatusInternalServerError)
+        res.Body = err.Error()
+        return
+    }
+    
 
-    res.StatusCode = StatusOK
+    res.StatusCode = strconv.Itoa(http.StatusOK)
 }
 
 
@@ -253,13 +278,13 @@ func UseReferralCode(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyRe
     
     if affectedRows == 0 {
         res.Headers["Content-Type"] = "charset=UTF-8"
-        res.StatusCode = StatusBadRequest
+        res.StatusCode = strconv.Itoa(http.StatusBadRequest)
         res.Body = "Invalid or expired code"
         return
     }
     
     res.Headers["Content-Type"] = "charset=UTF-8"
-    res.StatusCode = StatusOK
+    res.StatusCode = strconv.Itoa(http.StatusOK)
     res.Body = "Your code was used successfully!"
 
 }

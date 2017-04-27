@@ -39,6 +39,28 @@ var routes = r.Routes{
         GetReferralCodes,
     },
     
+    // OriginatorCode
+    r.Route{
+        "GetOriginatorCode",
+        "GET",
+        "/v1/api/stores/:store/originatorcodes/:code",
+        GetOriginatorCode,
+    },
+    
+    r.Route{
+        "UseOriginatorCode",
+        "PUT",
+        "/v1/api/stores/:store/originatorcodes/:code",
+        UseOriginatorCode,
+    },
+    
+    r.Route{
+        "GetOriginatorCodes",
+        "GET",
+        "/v1/api/stores/:store/originatorcodes",
+        GetOriginatorCodes,
+    },
+    
     // User
     r.Route{
         "LogInUser",

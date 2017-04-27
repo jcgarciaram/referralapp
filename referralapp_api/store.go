@@ -3,7 +3,7 @@ package referralapp_api
 import (
     "github.com/jcgarciaram/general-api/apiutils"
     
-    // "time"
+    "net/http"
     "fmt"
 )
 
@@ -54,9 +54,53 @@ func getCreateSchemaQueries(storeId string) []apiutils.UpsertQuery {
             
             Parameters: []interface{}{},
         },
+        {
+            // originator_code
+            Query: fmt.Sprintf(
+            "CREATE TABLE `%s`.`originator_code` " +
+            "(`originator_code_pk` INT NOT NULL AUTO_INCREMENT COMMENT ''," +
+            "`originator_code_id` VARCHAR(45) DEFAULT NULL COMMENT ''," +
+            "`store_id` VARCHAR(45) DEFAULT NULL COMMENT ''," +
+            "`phone` VARCHAR(45) DEFAULT NULL COMMENT ''," +
+            "`expiration_date` TIMESTAMP DEFAULT NULL COMMENT ''," +
+            "`used_count` INT NOT NULL COMMENT ''," +
+            "`verification_code` INT DEFAULT NULL COMMENT ''," +
+            "`verification_code_display` VARCHAR(8) DEFAULT NULL COMMENT ''," +
+            "`last_updated_timestamp` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT ''," +
+            "`created_timestamp` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT ''," +
+            "PRIMARY KEY (`originator_code_pk`)  COMMENT '')",
+            
+            "referralapp_" + storeId),
+            
+            Parameters: []interface{}{},
+        },
     }
     
     return createQueries
+}
+
+
+func verifyStoreExists(storeId string) (string, int) {
+
+    // Query to verify code is valid
+    query := "SELECT `store_id` from `store` where `store_id` = ?"
+    
+    // Run query from MySQL
+    getTotalCount := false
+    schema := "referralapp_master"
+    parameters :=  []interface{}{storeId}
+    rowMapSlice, _, errStr, httpResponse := apiutils.RunSelectQuery(schema, query, parameters, getTotalCount)
+    if httpResponse != 0 {
+        return errStr, httpResponse
+    }
+
+    // If no rows are returned, store does not exist. Return bad request. 
+    if len(rowMapSlice) == 0 {
+        
+        return "Store ID is invalid", http.StatusBadRequest
+    }
+    
+    return "", 0
 }
 
 

@@ -21,6 +21,7 @@ type ReferralCode struct {
     VerificationCodeDisplay     string              `json:"verification_code_display"`
 }
 
+
 func (rc *ReferralCode) generateVerificationCode() {
     s1 := rand.NewSource(time.Now().UnixNano())
     r1 := rand.New(s1)
@@ -39,7 +40,7 @@ func (rc *ReferralCode) generateVerificationCode() {
 
 func (rc *ReferralCode) generateQRCode() ([]byte, error) {
     
-    url := rc.StoreId + " " + rc.ReferralCodeId
+    url := "1 " + rc.StoreId + " " + rc.ReferralCodeId
 
     return qrcode.Encode(url, qrcode.Medium, 256)
 }

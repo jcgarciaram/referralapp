@@ -24,6 +24,22 @@ func GetReferralCode(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyRe
     // Get parameters from URL request
     storeId := params.Get("store")
     codeId := params.Get("code")
+    
+    // Verify Store Exists
+    if errStr, httpResponse := verifyStoreExists(storeId); httpResponse != 0 {
+        res.StatusCode = strconv.Itoa(httpResponse)
+
+        ret := struct {
+            Message string `json:"message"`
+        }{errStr}
+        
+        // Marshal response and return
+        retJson, _ := json.Marshal(ret)
+        res.Body = string(retJson)
+        
+        res.Headers["Content-Type"] = "application/json"
+        return
+    }
 
     // Query to get cake
     query := "SELECT * from `referral_code` where `referral_code_id` = ?"
@@ -40,7 +56,7 @@ func GetReferralCode(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyRe
         return
     }
 
-    // If no cakes are found, return StatusNoContent
+    // If no code is found, return StatusNoContent
     if len(rowMapSlice) == 0 {
         res.Headers["Content-Type"] = "charset=UTF-8"
         res.StatusCode = strconv.Itoa(http.StatusNoContent)
@@ -62,6 +78,22 @@ func GetReferralCodes(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyR
     
     // Get parameters from URL request
     storeId := params.Get("store")
+    
+    // Verify Store Exists
+    if errStr, httpResponse := verifyStoreExists(storeId); httpResponse != 0 {
+        res.StatusCode = strconv.Itoa(httpResponse)
+
+        ret := struct {
+            Message string `json:"message"`
+        }{errStr}
+        
+        // Marshal response and return
+        retJson, _ := json.Marshal(ret)
+        res.Body = string(retJson)
+        
+        res.Headers["Content-Type"] = "application/json"
+        return
+    }
 
     // Query to get cake
     query := "SELECT * from `referral_code`"
@@ -101,6 +133,22 @@ func PostReferralCode(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyR
     // Get parameters from URL request
     storeId := params.Get("store")
     
+    // Verify Store Exists
+    if errStr, httpResponse := verifyStoreExists(storeId); httpResponse != 0 {
+        res.StatusCode = strconv.Itoa(httpResponse)
+
+        ret := struct {
+            Message string `json:"message"`
+        }{errStr}
+        
+        // Marshal response and return
+        retJson, _ := json.Marshal(ret)
+        res.Body = string(retJson)
+        
+        res.Headers["Content-Type"] = "application/json"
+        return
+    }
+    
     // Read body from request
     var bodyByte []byte
     if tBody, err := apiutils.GetBodyFromEvent(evt); err != nil {
@@ -130,6 +178,7 @@ func PostReferralCode(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyR
     }
     
     rc.ReferralCodeId = bson.NewObjectId().Hex()
+    rc.StoreId = storeId
     rc.generateVerificationCode()
     expirationDate := time.Now().Add(time.Duration((7*24))*time.Hour)
     
@@ -183,6 +232,11 @@ func PostReferralCode(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyR
     // Generate QR png image
     qrCode, err := rc.generateQRCode()
     if err != nil {
+    
+        logrus.WithFields(logrus.Fields{
+            "err": err,
+        }).Warn("Error generating QR code")   
+        
         res.Headers["Content-Type"] = "charset=UTF-8"
         res.StatusCode = strconv.Itoa(http.StatusInternalServerError)
         res.Body = err.Error()
@@ -191,35 +245,43 @@ func PostReferralCode(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyR
     
     // Store QR to S3
     bucket := "referralapp-qrcodes"
-    key := storeId + "/" + rc.ReferralCodeId + ".png"
+    key := storeId + "/referral/" + rc.ReferralCodeId + ".png"
     if err := apiutils.SaveToS3(bucket, key, qrCode); err != nil {
+        
+        logrus.WithFields(logrus.Fields{
+            "err": err,
+        }).Warn("Error storing QR png to S3")  
+    
         res.Headers["Content-Type"] = "charset=UTF-8"
         res.StatusCode = strconv.Itoa(http.StatusInternalServerError)
         res.Body = err.Error()
         return
     }
     
-    url, err := apiutils.GetDownloadURL(bucket, key)
-    if err != nil {
+    // Make it publicly accessible
+    if err := apiutils.GiveS3ObjectPublicRead(bucket, key); err != nil {
+        logrus.WithFields(logrus.Fields{
+            "err": err,
+        }).Warn("Error storing QR png to S3")  
+    
         res.Headers["Content-Type"] = "charset=UTF-8"
         res.StatusCode = strconv.Itoa(http.StatusInternalServerError)
         res.Body = err.Error()
         return
     }
     
-    /*
-    messageBody := "Forward this code to your friends and get rewarded when it's used!"
-    if err := apiutils.SendMMSMessage(rc.GeneratedPhone, messageBody, url); err != nil {
-        res.Headers["Content-Type"] = "charset=UTF-8"
-        res.StatusCode = strconv.Itoa(http.StatusInternalServerError)
-        res.Body = err.Error()
-        return
-    }
-    */
+    // Public URL for object
+    url := "https://s3.amazonaws.com/referralapp-qrcodes/" + storeId + "/referral/" + rc.ReferralCodeId + ".png"
     
     var messageBody string
     
+    // Shorten URL using Google URL Shortener API
     if shortUrl, err := apiutils.ShortenURL(url); err != nil {
+        
+        logrus.WithFields(logrus.Fields{
+            "err": err,
+        }).Warn("Error shortening URL")  
+    
         res.Headers["Content-Type"] = "charset=UTF-8"
         res.StatusCode = strconv.Itoa(http.StatusInternalServerError)
         res.Body = err.Error()
@@ -230,15 +292,20 @@ func PostReferralCode(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyR
     
     }
     
+    // Send SMS Message using AWS SNS
+    if err = apiutils.SendAwsSMSMessage(rc.GeneratedPhone, messageBody); err != nil {
+        
+        logrus.WithFields(logrus.Fields{
+            "err": err,
+        }).Warn("Error sending SMS")  
     
-    if err = apiutils.SendSMSMessage(rc.GeneratedPhone, messageBody); err != nil {
         res.Headers["Content-Type"] = "charset=UTF-8"
         res.StatusCode = strconv.Itoa(http.StatusInternalServerError)
         res.Body = err.Error()
         return
     }
     
-
+    // Write OK
     res.StatusCode = strconv.Itoa(http.StatusOK)
 }
 
@@ -251,6 +318,21 @@ func UseReferralCode(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyRe
     storeId := params.Get("store")
     codeId := params.Get("code")
     
+    // Verify Store Exists
+    if errStr, httpResponse := verifyStoreExists(storeId); httpResponse != 0 {
+        res.StatusCode = strconv.Itoa(httpResponse)
+
+        ret := struct {
+            Message string `json:"message"`
+        }{errStr}
+        
+        // Marshal response and return
+        retJson, _ := json.Marshal(ret)
+        res.Body = string(retJson)
+        
+        res.Headers["Content-Type"] = "application/json"
+        return
+    }
     
     
     // Query to run
@@ -270,21 +352,160 @@ func UseReferralCode(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyRe
     getLastInsertId := false
     _, affectedRows, errStr, httpResponse := apiutils.RunUpsertQueries(upsertQueries, getLastInsertId)
     if httpResponse != 0 {
-        res.Headers["Content-Type"] = "charset=UTF-8"
-        res.StatusCode = strconv.Itoa(httpResponse)
-        res.Body = errStr
+        
+        res.StatusCode = strconv.Itoa(http.StatusBadRequest)
+        
+        
+        ret := struct {
+            Message string `json:"message"`
+        }{errStr}
+        
+        // Marshal response and return
+        retJson, _ := json.Marshal(ret)
+        res.Body = string(retJson)
+        
+        res.Headers["Content-Type"] = "application/json"
         return
     }
     
     if affectedRows == 0 {
-        res.Headers["Content-Type"] = "charset=UTF-8"
         res.StatusCode = strconv.Itoa(http.StatusBadRequest)
-        res.Body = "Invalid or expired code"
+        
+        
+        ret := struct {
+            Message string `json:"message"`
+        }{"Invalid or expired code"}
+        
+        // Marshal response and return
+        retJson, _ := json.Marshal(ret)
+        res.Body = string(retJson)
+        
+        res.Headers["Content-Type"] = "application/json"
         return
     }
     
-    res.Headers["Content-Type"] = "charset=UTF-8"
+    
+    // Query to get referral code
+    query = "SELECT * from `referral_code` where `referral_code_id` = ?"
+    
+    // Run query from MySQL
+    getTotalCount := false
+    schema := "referralapp_" + storeId
+    parameters =  []interface{}{codeId}
+    rowMapSlice, _, errStr, httpResponse := apiutils.RunSelectQuery(schema, query, parameters, getTotalCount)
+    if httpResponse != 0 {
+        res.StatusCode = strconv.Itoa(http.StatusBadRequest)
+        
+        
+        ret := struct {
+            Message string `json:"message"`
+        }{errStr}
+        
+        // Marshal response and return
+        retJson, _ := json.Marshal(ret)
+        res.Body = string(retJson)
+        
+        res.Headers["Content-Type"] = "application/json"
+        return
+    }
+    
+    // Get phone that generated original code to send originator reward
+    originatorPhone := rowMapSlice[0]["generated_phone"].(string)
+    
+    // Create new variable
+    var oc OriginatorCode
+    oc.Phone = originatorPhone
+    oc.StoreId = storeId
+    
+    // Build all originator fields and store in DB
+    if err := oc.buildOriginatorCode(); err != nil {
+        logrus.WithFields(logrus.Fields{
+            "err": err,
+        }).Warn("Error generating QR code")   
+        
+        res.Headers["Content-Type"] = "charset=UTF-8"
+        res.StatusCode = strconv.Itoa(http.StatusInternalServerError)
+        res.Body = err.Error()
+        return
+    }
+    
+    // Generate QR png image
+    qrCode, err := oc.generateQRCode()
+    if err != nil {
+    
+        logrus.WithFields(logrus.Fields{
+            "err": err,
+        }).Warn("Error generating QR code")   
+        
+        res.Headers["Content-Type"] = "charset=UTF-8"
+        res.StatusCode = strconv.Itoa(http.StatusInternalServerError)
+        res.Body = err.Error()
+        return
+    }
+    
+    // Store QR to S3
+    bucket := "referralapp-qrcodes"
+    key := storeId + "/originator/" + oc.OriginatorCodeId + ".png"
+    if err := apiutils.SaveToS3(bucket, key, qrCode); err != nil {
+        
+        logrus.WithFields(logrus.Fields{
+            "err": err,
+        }).Warn("Error storing QR png to S3")  
+    
+        res.Headers["Content-Type"] = "charset=UTF-8"
+        res.StatusCode = strconv.Itoa(http.StatusInternalServerError)
+        res.Body = err.Error()
+        return
+    }
+
+    // Make it publicly accessible
+    if err := apiutils.GiveS3ObjectPublicRead(bucket, key); err != nil {
+        logrus.WithFields(logrus.Fields{
+            "err": err,
+        }).Warn("Error storing QR png to S3")  
+    
+        res.Headers["Content-Type"] = "charset=UTF-8"
+        res.StatusCode = strconv.Itoa(http.StatusInternalServerError)
+        res.Body = err.Error()
+        return
+    }
+    
+    // Public URL for object
+    url := "https://s3.amazonaws.com/referralapp-qrcodes/" + storeId + "/originator/" + oc.OriginatorCodeId + ".png"
+    
+    var messageBody string
+    
+    // Shorten URL using Google URL Shortener API
+    if shortUrl, err := apiutils.ShortenURL(url); err != nil {
+        
+        logrus.WithFields(logrus.Fields{
+            "err": err,
+        }).Warn("Error shortening URL")  
+    
+        res.Headers["Content-Type"] = "charset=UTF-8"
+        res.StatusCode = strconv.Itoa(http.StatusInternalServerError)
+        res.Body = err.Error()
+        return
+    } else {
+    
+        messageBody = "Someone has used your QR code! Show this and get 10% off your purchase! " + shortUrl
+    
+    }
+    
+    // Send SMS Message using AWS SNS
+    if err = apiutils.SendAwsSMSMessage(oc.Phone, messageBody); err != nil {
+        
+        logrus.WithFields(logrus.Fields{
+            "err": err,
+        }).Warn("Error sending SMS")  
+    
+        res.Headers["Content-Type"] = "charset=UTF-8"
+        res.StatusCode = strconv.Itoa(http.StatusInternalServerError)
+        res.Body = err.Error()
+        return
+    }
+    
+    // Write OK
     res.StatusCode = strconv.Itoa(http.StatusOK)
-    res.Body = "Your code was used successfully!"
 
 }

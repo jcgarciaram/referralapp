@@ -2,7 +2,7 @@
 var api_route = "https://qs1l6iwb53.execute-api.us-east-1.amazonaws.com/prod/v1/api"
 
 // While no real authentication is done, hard-code store_id
-var store_id = "58ea6638c2bbb60014dfe7a9"
+var store_id = "59021b5369c9e30013d404ca"
 
 function addLoadEvent(func) {
     var oldonload = window.onload;

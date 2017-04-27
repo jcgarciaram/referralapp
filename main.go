@@ -12,7 +12,7 @@ import (
 func main() {
 	r := routes.Routes{}
     
-    // Append general_museum routes
+    // Append referralapp routes
     r.AppendRoutes(ra.GetRoutes())
     
 

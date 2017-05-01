@@ -7,9 +7,11 @@ import (
     // "github.com/aws/aws-sdk-go/aws/session"
     "github.com/tmaiaroto/aegis/lambda"
     // "github.com/aws/aws-sdk-go/aws"
+    "golang.org/x/crypto/bcrypt"
     "github.com/Sirupsen/logrus"
     // "github.com/guregu/dynamo"
     "gopkg.in/mgo.v2/bson"
+    
     
     "encoding/json"
     "net/http"
@@ -21,8 +23,8 @@ import (
     "fmt"
 )
 
-// PostStore
-func PostStore(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyResponse, params url.Values) {
+// CreateStoreAccount
+func CreateStoreAccount(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyResponse, params url.Values) {
 
     // Read body from request
     var bodyByte []byte
@@ -55,6 +57,22 @@ func PostStore(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyResponse
     
     s.StoreId = bson.NewObjectId().Hex()
     
+    // Hash password
+    hashByte, err := bcrypt.GenerateFromPassword([]byte(s.Password), 6)
+    if err != nil {
+        logrus.WithFields(logrus.Fields{
+            "err": err,
+        }).Warn("Error hashing password")   
+        
+        res.Headers["Content-Type"] = "charset=UTF-8"
+        res.StatusCode = strconv.Itoa(http.StatusInternalServerError)
+        res.Body = fmt.Sprintf("Error hashing password")
+        return
+    }
+    
+    // We will only store the hashed password
+    s.Password = string(hashByte)
+    
 
     
     for {
@@ -67,19 +85,15 @@ func PostStore(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyResponse
             "`store_name`," +
             "`store_type`," +
             "`store_email`," +
-            "`contact_user_id`," +
-            "`created_by`," +
-            "`last_updated_by`) " +
-            "VALUES (?,?,?,?,?,?,?)"
+            "`password`)" +
+            "VALUES (?,?,?,?,?)"
         
         parameters := []interface{}{
             s.StoreId,
             s.StoreName,
             s.StoreType,
             s.StoreEmail,
-            s.ContactUserId,
-            UserEmail,
-            UserEmail,
+            s.Password,
         }
      
         
@@ -172,5 +186,92 @@ func GetStore(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyResponse,
 	res.Body = string(retJson)
     
 	res.Headers["Content-Type"] = "application/json"
+    
+}
+
+
+
+// LogInStore
+func LogInStore(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyResponse, params url.Values) {
+
+    
+    // Read body from request
+    var bodyByte []byte
+    if tBody, err := apiutils.GetBodyFromEvent(evt); err != nil {
+        res.Headers["Content-Type"] = "charset=UTF-8"
+        res.StatusCode = strconv.Itoa(http.StatusInternalServerError)
+        res.Body = err.Error()
+        return
+    } else {
+        bodyByte = tBody
+    }
+    
+
+    
+    // Struct to unmarshal body of request into
+    var s Store
+    
+
+    // Unmarshal body into storeConfig struct defined above
+    if err := json.Unmarshal(bodyByte, &s); err != nil {
+    
+        logrus.WithFields(logrus.Fields{
+            "err": err,
+        }).Warn("Error marshaling JSON to storeConfig struct")   
+        
+        res.Headers["Content-Type"] = "charset=UTF-8"
+        res.StatusCode = strconv.Itoa(http.StatusUnprocessableEntity)
+        res.Body = "Error marshaling JSON to storeConfig struct"
+        return
+    }
+
+    // Query to get store
+    query := "SELECT * from `store` where `store_email` = ?"
+    
+    // Run query from MySQL
+    getTotalCount := false
+    schema := "referralapp_master"
+    rowMapSlice, _, errStr, httpResponse := apiutils.RunSelectQuery(schema, query, []interface{}{s.StoreEmail}, getTotalCount)
+    if httpResponse != 0 {
+        res.Headers["Content-Type"] = "charset=UTF-8"
+        res.StatusCode = strconv.Itoa(httpResponse)
+        res.Body = errStr
+        return
+    }
+
+    // If no users are found, return StatusNoContent
+    if len(rowMapSlice) == 0 {
+        
+        res.Headers["Content-Type"] = "charset=UTF-8"
+        res.StatusCode = strconv.Itoa(http.StatusNoContent)
+        res.Body = "No content"
+        return
+    }
+    
+    storedPassword := rowMapSlice[0]["password"].(string)
+    storeId := rowMapSlice[0]["store_id"].(string)
+    
+    // Verify password is correct. If not, return error
+    if err := bcrypt.CompareHashAndPassword([]byte(storedPassword), []byte(s.Password)); err != nil {
+    
+        res.Headers["Content-Type"] = "charset=UTF-8"
+        res.StatusCode = strconv.Itoa(http.StatusNoContent)
+        res.Body = "Invalid username/password"
+        return
+    }
+    
+    
+    js := JWTStruct{s.StoreEmail, storeId}
+    
+    token, err := apiutils.GenerateJWT(js)
+    if err != nil {
+        res.Headers["Content-Type"] = "charset=UTF-8"
+        res.StatusCode = strconv.Itoa(http.StatusInternalServerError)
+        res.Body = "Error generating JSON Web Token"
+        return
+    }
+    
+    res.Headers["Set-Cookie"] = apiutils.GenerateCookieToken(token)
+    res.StatusCode = strconv.Itoa(http.StatusOK)
     
 }

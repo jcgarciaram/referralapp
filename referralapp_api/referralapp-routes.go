@@ -14,28 +14,28 @@ var routes = r.Routes{
     r.Route{
         "GetReferralCode",
         "GET",
-        "/v1/api/stores/:store/referralcodes/:code",
+        "/v1/api/referralcodes/:code",
         GetReferralCode,
     },
     
     r.Route{
         "UseReferralCode",
         "PUT",
-        "/v1/api/stores/:store/referralcodes/:code",
+        "/v1/api/referralcodes/:code",
         UseReferralCode,
     },
 
     r.Route{
-        "PostReferralCode",
+        "GenerateReferralCode",
         "POST",
-        "/v1/api/stores/:store/referralcodes",
-        PostReferralCode,
+        "/v1/api/referralcodes",
+        GenerateReferralCode,
     },
     
     r.Route{
         "GetReferralCodes",
         "GET",
-        "/v1/api/stores/:store/referralcodes",
+        "/v1/api/referralcodes",
         GetReferralCodes,
     },
     
@@ -43,21 +43,21 @@ var routes = r.Routes{
     r.Route{
         "GetOriginatorCode",
         "GET",
-        "/v1/api/stores/:store/originatorcodes/:code",
+        "/v1/api/stores/:code",
         GetOriginatorCode,
     },
     
     r.Route{
         "UseOriginatorCode",
         "PUT",
-        "/v1/api/stores/:store/originatorcodes/:code",
+        "/v1/api/originatorcodes/:code",
         UseOriginatorCode,
     },
     
     r.Route{
         "GetOriginatorCodes",
         "GET",
-        "/v1/api/stores/:store/originatorcodes",
+        "/v1/api/originatorcodes",
         GetOriginatorCodes,
     },
     
@@ -85,10 +85,17 @@ var routes = r.Routes{
     
     // Store
     r.Route{
-        "PostStore",
+        "CreateStoreAccount",
         "POST",
-        "/v1/api/stores",
-        PostStore,
+        "/v1/api/createaccount",
+        CreateStoreAccount,
+    },
+    
+    r.Route{
+        "LogInStore",
+        "POST",
+        "/v1/api/login",
+        LogInStore,
     },
 
     r.Route{
@@ -104,4 +111,3 @@ var routes = r.Routes{
 func GetRoutes() r.Routes {
     return routes
 }
-

@@ -21,8 +21,24 @@ import (
 // GetReferralCode retrieves a particular referral code
 func GetReferralCode(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyResponse, params url.Values) {
     
-    // Get parameters from URL request
-    storeId := params.Get("store")
+    // Get storeId from JWT
+    var storeId string
+    if s, ok := getStoreId(evt); !ok {
+        res.StatusCode = strconv.Itoa(http.StatusForbidden)
+        ret := struct {
+            Message string `json:"message"`
+        }{"Something is wrong man"}
+        
+        // Marshal response and return
+        retJson, _ := json.Marshal(ret)
+        res.Body = string(retJson)
+        
+        res.Headers["Content-Type"] = "application/json"
+        return
+    } else {
+        storeId = s
+    }
+
     codeId := params.Get("code")
     
     // Verify Store Exists
@@ -76,8 +92,23 @@ func GetReferralCode(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyRe
 // GetReferralCodes retrieves all codes for a single store
 func GetReferralCodes(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyResponse, params url.Values) {
     
-    // Get parameters from URL request
-    storeId := params.Get("store")
+    // Get storeId from JWT
+    var storeId string
+    if s, ok := getStoreId(evt); !ok {
+        res.StatusCode = strconv.Itoa(http.StatusForbidden)
+        ret := struct {
+            Message string `json:"message"`
+        }{"Something is wrong man"}
+        
+        // Marshal response and return
+        retJson, _ := json.Marshal(ret)
+        res.Body = string(retJson)
+        
+        res.Headers["Content-Type"] = "application/json"
+        return
+    } else {
+        storeId = s
+    }
     
     // Verify Store Exists
     if errStr, httpResponse := verifyStoreExists(storeId); httpResponse != 0 {
@@ -127,11 +158,26 @@ func GetReferralCodes(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyR
 }
 
 
-// PostReferralCode generated a unique referral code
-func PostReferralCode(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyResponse, params url.Values) {
+// GenerateReferralCode generated a unique referral code
+func GenerateReferralCode(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyResponse, params url.Values) {
 
-    // Get parameters from URL request
-    storeId := params.Get("store")
+    // Get storeId from JWT
+    var storeId string
+    if s, ok := getStoreId(evt); !ok {
+        res.StatusCode = strconv.Itoa(http.StatusForbidden)
+        ret := struct {
+            Message string `json:"message"`
+        }{"Something is wrong man"}
+        
+        // Marshal response and return
+        retJson, _ := json.Marshal(ret)
+        res.Body = string(retJson)
+        
+        res.Headers["Content-Type"] = "application/json"
+        return
+    } else {
+        storeId = s
+    }
     
     // Verify Store Exists
     if errStr, httpResponse := verifyStoreExists(storeId); httpResponse != 0 {
@@ -314,8 +360,24 @@ func PostReferralCode(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyR
 // UseReferralCode verifies whether code is still valid based on expiration date and keeps a count of the times it has been used
 func UseReferralCode(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyResponse, params url.Values) {
     
-    // Get parameters from URL request
-    storeId := params.Get("store")
+    // Get storeId from JWT
+    var storeId string
+    if s, ok := getStoreId(evt); !ok {
+        res.StatusCode = strconv.Itoa(http.StatusForbidden)
+        ret := struct {
+            Message string `json:"message"`
+        }{"Something is wrong man"}
+        
+        // Marshal response and return
+        retJson, _ := json.Marshal(ret)
+        res.Body = string(retJson)
+        
+        res.Headers["Content-Type"] = "application/json"
+        return
+    } else {
+        storeId = s
+    }
+    
     codeId := params.Get("code")
     
     // Verify Store Exists

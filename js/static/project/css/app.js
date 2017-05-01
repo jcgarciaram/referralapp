@@ -1,12 +1,13 @@
 // API Route which will be prepended :) to all routes called
 var api_route = "https://qs1l6iwb53.execute-api.us-east-1.amazonaws.com/prod/v1/api"
 
-// While no real authentication is done, hard-code store_id
-var store_id = "59021b5369c9e30013d404ca"
+
 
 
 // Load when index.html is first open
 window.onload = function () {
+
+    
 
     // While no cookie set up is yet implemented, allow all requests
     Vue.http.headers.common['Authorization'] = 'allow';
@@ -49,6 +50,35 @@ window.onload = function () {
     });
     
     
+    var GenerateReferralCodeComponent = Vue.component('generatereferralcode', {
+    template: '\
+        <div>\
+            <label for="phoneNumber">Phone Number</label>\
+            <input type="tel" class="form-control" id="phoneNumber" placeholder="(555) 555-5555"  v-model="refercode.generated_phone" v-on:input="updateNewReferCode">\
+            <button type="button" class="btn btn-primary" data-dismiss="modal" v-on:click="createreferralcode">Generate personalized QR code</button>\
+        </div>\
+    ',
+    props: {
+        refercode: {
+            type: Object,
+            default: function () {
+                return { 
+                    generated_phone: ''
+                }
+            }
+        }
+    },
+    methods: {
+        createreferralcode: function () {
+            this.$emit('createreferralcode')
+        },
+        updateNewReferCode: function () {
+          this.$emit('input', this.refercode)
+        },
+    }
+    });
+    
+    
     // Vue component for the cake-table. This will contain all functions related to cakes
     new Vue({
         el: '#referral-code-table',
@@ -56,37 +86,20 @@ window.onload = function () {
         data: {
             referralCodes: [],
             lenReferralCodes: 0,
-            newReferralCode: {}
+            newReferralCode: {},
+            loggedIn: false
         },
 
         // This is run whenever the page is loaded to make sure we have a current cake list
         created: function() {
       
-            // Use the vue-resource $http client to fetch data from the /cakes route
-            this.$http.get(api_route + '/stores/' + store_id + '/referralcodes').then(function(response) {
-                console.log("Hey top response here: response.status is ", response.status);
-            
-                if (response.status == 403) {
-                    console.log("Hey top response here: 403 was returned");
-                    //window.location.href = 'authenticate.html';
-                }
-                
-                this.referralCodes = response.body ? response.body : [];
-                this.lenReferralCodes = this.referralCodes.length;
-            }, (response) => {
-                console.log("Hey bottom response here: response.status is ", response.status);
-                    
-                if (response.status == 403) {
-                    console.log("Hey bottom response here: 403 was returned");
-                    // window.location.href = 'authenticate.html';
-                }
-        
-            });
-
+            if (window.localStorage.getItem('loggedIn')) {
+                    this.loggedIn = true;
+            } else {
+                    this.loggedIn = false;
+            }
         },
-      
-      
-     
+
       
         // Methods for all API calls
         methods: {
@@ -100,7 +113,7 @@ window.onload = function () {
                     this.newReferralCode = {};
                     return
                 }
-                
+
                 phoneString = String(this.newReferralCode.generated_phone)
                 
                 phoneString = phoneString.replace("(", "")
@@ -108,10 +121,14 @@ window.onload = function () {
                 phoneString = phoneString.replace(" ", "")
                 phoneString = phoneString.replace("-", "")
                 
-                this.newReferralCode.generated_phone = '+1' + phoneString
+                if (phoneString.charAt(0) != '+') {
+                    this.newReferralCode.generated_phone = '+1' + phoneString
+                } else {
+                    this.newReferralCode.generated_phone = phoneString
+                }
                 
                 // Post the new cake to the /cakes route using the $http client
-                this.$http.post(api_route + '/stores/' + store_id + '/referralcodes', this.newReferralCode).then((response) => {
+                this.$http.post(api_route + '/referralcodes', this.newReferralCode).then((response) => {
                     
                     if (response.status == 403) {
                         window.location.href = 'authenticate.html';
@@ -122,8 +139,6 @@ window.onload = function () {
                         console.log("referralcode has been added!");
                         
                         this.newReferralCode.s3URL = response.body
-
-                        this.referralCodes = insertCake(this.newReferralCode, this.referralCodes);
                     }
                     
                     // Clear out newCake
@@ -147,7 +162,7 @@ window.onload = function () {
             useReferralCode: function(referralCodeId) {
             
                 // Make API request
-                this.$http.put(api_route + '/stores/' + store_id + '/referralcodes/' + referralCodeId).then((response) => {
+                this.$http.put(api_route + '/referralcodes/' + referralCodeId).then((response) => {
                     
                     if (response.status == 403) {
                         window.location.href = 'authenticate.html';

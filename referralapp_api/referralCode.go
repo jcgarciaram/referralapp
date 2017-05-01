@@ -40,7 +40,7 @@ func (rc *ReferralCode) generateVerificationCode() {
 
 func (rc *ReferralCode) generateQRCode() ([]byte, error) {
     
-    url := "1 " + rc.StoreId + " " + rc.ReferralCodeId
+    url := "1 " + rc.ReferralCodeId
 
     return qrcode.Encode(url, qrcode.Medium, 256)
 }

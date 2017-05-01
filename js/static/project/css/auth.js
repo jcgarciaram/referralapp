@@ -2,7 +2,7 @@
 var api_route = "https://qs1l6iwb53.execute-api.us-east-1.amazonaws.com/prod/v1/api"
 
 // While no real authentication is done, hard-code store_id
-var store_id = "59021b5369c9e30013d404ca"
+// var store_id = "59021b5369c9e30013d404ca"
 
 function addLoadEvent(func) {
     var oldonload = window.onload;
@@ -23,27 +23,27 @@ addLoadEvent(function() {
     // While no cookie set up is yet implemented, allow all requests
     Vue.http.headers.common['Authorization'] = 'allow';
     
-    Vue.component('loginpage', {
+    var LoginComponent = Vue.component('loginpage', {
     template: '\
         <div>\
-            <label for="userEmail">User Email</label>\
-            <input type="email" class="form-control" id="userEmail" placeholder="user@domain.com"  v-model="loginuser.user_email" v-on:input="updateLoginUser">\
-            <label for="userPassword">Password</label>\
-            <input type="password" class="form-control" id="userPassword" placeholder="" v-model="loginuser.password" v-on:input="updateLoginUser">\
+            <label for="storeEmail">Store Email</label>\
+            <input type="email" class="form-control" id="storeEmail" placeholder="store@domain.com"  v-model="loginstore.store_email" v-on:input="updateLoginStore">\
+            <label for="storePassword">Password</label>\
+            <input type="password" class="form-control" id="storePassword" placeholder="" v-model="loginstore.password" v-on:input="updateLoginStore">\
             <button type="button" class="btn btn-primary" data-dismiss="modal" v-on:click="login">Log In</button>\
             <div>\
-              <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#postUser">\
+              <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#postStore">\
               create account\
               </button>\
             </div>\
-            <div class="modal fade" id="postUser" tabindex="-1" role="dialog" aria-labelledby="postUserLabel" aria-hidden="true">\
+            <div class="modal fade" id="postStore" tabindex="-1" role="dialog" aria-labelledby="postStoreLabel" aria-hidden="true">\
               <div class="modal-dialog" role="document">\
                 <div class="modal-content">\
                   <div class="modal-header">\
                     <div class="column-left"> \
                     </div>\
                     <div class="column-center">\
-                      <h4 class="modal-title" id="postUserLabel">create account</h4>\
+                      <h4 class="modal-title" id="postStoreLabel">create account</h4>\
                     </div>\
                     <div id="modal-title-col" class="column-right">\
                       <button type="button" class="close" data-dismiss="modal" aria-label="Close">\
@@ -54,28 +54,28 @@ addLoadEvent(function() {
                   <div class="modal-body">\
                     <form name="createAccountForm">\
                       <div class="form-group">\
-                        <label for="createUserEmail">User Email</label>\
-                        <input type="email" class="form-control" id="createUserEmail" placeholder="user@domain.com"  v-model="createuser.user_email" v-on:input="updateCreateUser">\
+                        <label for="createStoreEmail">Store Email</label>\
+                        <input type="email" class="form-control" id="createStoreEmail" placeholder="store@domain.com"  v-model="createstore.store_email" v-on:input="updateCreateStore">\
                       </div>\
                       <div class="form-group">\
-                        <label for="createUserPass">Password</label>\
-                        <input type="password" class="form-control" id="createUserPass" placeholder=""  v-model="createuser.password" v-on:input="updateCreateUser">\
+                        <label for="createStorePass">Password</label>\
+                        <input type="password" class="form-control" id="createStorePass" placeholder=""  v-model="createstore.password" v-on:input="updateCreateStore">\
                       </div>\
                       <div class="form-group">\
-                        <label for="createUserFirstName">First name</label>\
-                        <input type="text" class="form-control" id="createUserFirstName" placeholder="Enter first name"  v-model="createuser.first_name" v-on:input="updateCreateUser">\
+                        <label for="createStoreFirstName">First name</label>\
+                        <input type="text" class="form-control" id="createStoreFirstName" placeholder="Enter first name"  v-model="createstore.first_name" v-on:input="updateCreateStore">\
                       </div>\
                       <div class="form-group">\
-                        <label for="createUserMiddleName">Middle name</label>\
-                        <input type="text" class="form-control" id="createUserMiddleName" placeholder="Enter middle name"  v-model="createuser.middle_name" v-on:input="updateCreateUser">\
+                        <label for="createStoreMiddleName">Middle name</label>\
+                        <input type="text" class="form-control" id="createStoreMiddleName" placeholder="Enter middle name"  v-model="createstore.middle_name" v-on:input="updateCreateStore">\
                       </div>\
                       <div class="form-group">\
-                        <label for="createUserLastName">Last name</label>\
-                        <input type="text" class="form-control" id="createUserLastName" placeholder="Enter last name"  v-model="createuser.last_name" v-on:input="updateCreateUser">\
+                        <label for="createStoreLastName">Last name</label>\
+                        <input type="text" class="form-control" id="createStoreLastName" placeholder="Enter last name"  v-model="createstore.last_name" v-on:input="updateCreateStore">\
                       </div>\
                       <div class="form-group">\
-                        <label for="createUserSecondLastName">Second last name</label>\
-                        <input type="text" class="form-control" id="createUserSecondLastName" placeholder="Enter second last name"  v-model="createuser.second_last_name" v-on:input="updateCreateUser">\
+                        <label for="createStoreSecondLastName">Second last name</label>\
+                        <input type="text" class="form-control" id="createStoreSecondLastName" placeholder="Enter second last name"  v-model="createstore.second_last_name" v-on:input="updateCreateStore">\
                       </div>\
                     </form>\
                   </div>\
@@ -89,20 +89,20 @@ addLoadEvent(function() {
         </div>\
     ',
     props: {
-        loginuser: {
+        loginstore: {
             type: Object,
             default: function () {
                 return { 
-                    user_email: '',
+                    store_email: '',
                     password: ''
                 }
             }
         },
-        createuser: {
+        createstore: {
             type: Object,
             default: function () {
                 return { 
-                    user_email: '',
+                    store_email: '',
                     password: '',
                     first_name: '',
                     middle_name: '',
@@ -119,11 +119,11 @@ addLoadEvent(function() {
         login: function () {
             this.$emit('login')
         },
-        updateLoginUser: function () {
-          this.$emit('input', this.loginuser)
+        updateLoginStore: function () {
+          this.$emit('input', this.loginstore)
         },
-        updateCreateUser: function () {
-          this.$emit('input', this.createuser)
+        updateCreateStore: function () {
+          this.$emit('input', this.createstore)
         }
     }
     });
@@ -134,7 +134,19 @@ addLoadEvent(function() {
         el: '#auth-div',
         delimiters: ['$$$', '$$$'],
         data: {
-            user: {}
+            store: {},
+            loggedIn: false
+        },
+
+        // This is run whenever the page is loaded to make sure we have a current cake list
+        created: function() {
+      
+            if (window.localStorage.getItem('loggedIn')) {
+                    this.loggedIn = true;
+                    
+            } else {
+                    this.loggedIn = false;
+            }
         },
       
         // Methods for all API calls
@@ -142,16 +154,16 @@ addLoadEvent(function() {
         
         
             // Create new cake.
-            loginUser: function() {
+            loginStore: function() {
         
                 // Not sure what this does :). Copied and pasted from website. Please investigate
-                if (!$.trim(this.user)) {
-                    this.user = {};
+                if (!$.trim(this.store)) {
+                    this.store = {};
                     return
                 }
                 
                 // Post the new cake to the /cakes route using the $http client
-                this.$http.post(api_route + '/users/login', this.user).then((response) => {
+                this.$http.post(api_route + '/login', this.store).then((response) => {
         
                     // If API returns with OK status, add the cake to the cakes array
                     if (response.status == 200) {
@@ -179,14 +191,14 @@ addLoadEvent(function() {
             createAccount: function() {
             
                 // Make API request
-                this.$http.post(api_route + '/users', this.user).then((response) => {
+                this.$http.post(api_route + '/createaccount', this.store).then((response) => {
                     
                     if (response.status == 200) {
                         console.log("account has been created");
                     }
                     
                     // Clear out newCake
-                    this.user = {};
+                    this.store = {};
                     
                 }, (response) => {
                 

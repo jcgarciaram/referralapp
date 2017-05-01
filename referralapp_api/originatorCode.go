@@ -42,7 +42,7 @@ func (oc *OriginatorCode) generateVerificationCode() {
 
 func (oc *OriginatorCode) generateQRCode() ([]byte, error) {
     
-    url := "2 " + oc.StoreId + " " + oc.OriginatorCodeId
+    url := "2 " + oc.OriginatorCodeId
 
     return qrcode.Encode(url, qrcode.Medium, 256)
 }

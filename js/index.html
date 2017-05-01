@@ -52,15 +52,16 @@
       <div class="container" id="events">
       
         <div id="auth-div">
-            <loginpage v-on:login="loginUser" v-on:createaccount="createAccount" v-model="user"></loginpage>
+            <div v-if="loggedIn == false">
+                <loginpage v-on:login="loginStore" v-on:createaccount="createAccount" v-model="store"></loginpage>
+            </div>
         </div>
 
         <!-- add an event form -->
         <div id="referral-code-table">
-            <label for="phoneNumber">Phone Number</label>
-            <input type="tel" class="form-control" id="phoneNumber" placeholder="(555) 555-5555"  v-model="newReferralCode.generated_phone">
-            <button type="button" class="btn btn-primary" data-dismiss="modal" v-on:click="createReferralCode">Generate personalized QR code</button>
-            
+            <div v-if="loggedIn == true">
+                <generatereferralcode v-on:createReferralCode="createReferralCode" v-model="newReferralCode"></generatereferralcode>
+            </div>
         </div>
       </div>
     </body>

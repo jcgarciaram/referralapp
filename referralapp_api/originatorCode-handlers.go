@@ -21,8 +21,25 @@ import (
 // GetOriginatorCode retrieves a particular originator code
 func GetOriginatorCode(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyResponse, params url.Values) {
     
+    // Get storeId from JWT
+    var storeId string
+    if s, ok := getStoreId(evt); !ok {
+        res.StatusCode = strconv.Itoa(http.StatusForbidden)
+        ret := struct {
+            Message string `json:"message"`
+        }{"Something is wrong man"}
+        
+        // Marshal response and return
+        retJson, _ := json.Marshal(ret)
+        res.Body = string(retJson)
+        
+        res.Headers["Content-Type"] = "application/json"
+        return
+    } else {
+        storeId = s
+    }
+    
     // Get parameters from URL request
-    storeId := params.Get("store")
     codeId := params.Get("code")
     
     // Verify Store Exists
@@ -76,8 +93,23 @@ func GetOriginatorCode(ctx *lambda.Context, evt *lambda.Event, res *lambda.Proxy
 // GetOriginatorCodes retrieves all codes for a single store
 func GetOriginatorCodes(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyResponse, params url.Values) {
     
-    // Get parameters from URL request
-    storeId := params.Get("store")
+    // Get storeId from JWT
+    var storeId string
+    if s, ok := getStoreId(evt); !ok {
+        res.StatusCode = strconv.Itoa(http.StatusForbidden)
+        ret := struct {
+            Message string `json:"message"`
+        }{"Something is wrong man"}
+        
+        // Marshal response and return
+        retJson, _ := json.Marshal(ret)
+        res.Body = string(retJson)
+        
+        res.Headers["Content-Type"] = "application/json"
+        return
+    } else {
+        storeId = s
+    }
     
     // Verify Store Exists
     if errStr, httpResponse := verifyStoreExists(storeId); httpResponse != 0 {
@@ -130,8 +162,25 @@ func GetOriginatorCodes(ctx *lambda.Context, evt *lambda.Event, res *lambda.Prox
 // UseOriginatorCode verifies whether code is still valid based on expiration date and keeps a count of the times it has been used
 func UseOriginatorCode(ctx *lambda.Context, evt *lambda.Event, res *lambda.ProxyResponse, params url.Values) {
     
+    // Get storeId from JWT
+    var storeId string
+    if s, ok := getStoreId(evt); !ok {
+        res.StatusCode = strconv.Itoa(http.StatusForbidden)
+        ret := struct {
+            Message string `json:"message"`
+        }{"Something is wrong man"}
+        
+        // Marshal response and return
+        retJson, _ := json.Marshal(ret)
+        res.Body = string(retJson)
+        
+        res.Headers["Content-Type"] = "application/json"
+        return
+    } else {
+        storeId = s
+    }
+    
     // Get parameters from URL request
-    storeId := params.Get("store")
     codeId := params.Get("code")
     
     

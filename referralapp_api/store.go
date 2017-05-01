@@ -2,9 +2,11 @@ package referralapp_api
 
 import (
     "github.com/jcgarciaram/general-api/apiutils"
+    "github.com/tmaiaroto/aegis/lambda"
     
     "net/http"
     "fmt"
+    "log"
 )
 
 type Store struct {
@@ -12,9 +14,26 @@ type Store struct {
     StoreName       string              `json:"store_name" dynamo:"store_name"`
     StoreType       string              `json:"store_type" dynamo:"store_type"`
     StoreEmail      string              `json:"store_email" dynamo:"store_email"`
+    Password        string              `json:"password" dynamo:"password"`
     ContactUserId   string              `json:"contact_user_id" dynamo:"contact_user_id"`
 }
 
+type JWTStruct struct {
+    StoreEmail  string  `json:"store_email"`
+    StoreId     string  `json:"store_id"`
+}
+
+func getStoreId(evt *lambda.Event) (string, bool) {
+    var stringId string
+    stringId, ok := evt.ObjectMap["store_id"].(string)
+    return stringId, ok
+}
+
+func getStoreEmail(evt *lambda.Event) (string, bool) {
+    var stringEmail string
+    stringEmail, ok := evt.ObjectMap["store_email"].(string)
+    return stringEmail, ok
+}
 
 
 // getCreateSchemaQueries returns all the queries for a 
@@ -102,6 +121,8 @@ func verifyStoreExists(storeId string) (string, int) {
     
     return "", 0
 }
+
+
 
 
 
